@@ -105,7 +105,7 @@ class OctoEncodingWrapper(nn.Module):
     ) -> jnp.ndarray:   
         if action_embeddings is None:     
             image_primary = observations["side_policy_256"]
-            image_wrist = observations["wrist_1"]
+            image_wrist = observations["wrist"]
             if image_primary.ndim == 4:
                 image_primary = image_primary[jnp.newaxis, ...]
                 image_wrist = image_wrist[jnp.newaxis, ...]

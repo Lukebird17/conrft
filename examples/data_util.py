@@ -66,7 +66,7 @@ def add_embeddings_to_trajectory(trajectory, model, tasks):
         observation = trajectory[i]['observations']
 
         image_primary = observation["side_policy_256"]
-        image_wrist = observation["wrist_1"]
+        image_wrist = observation["wrist"]
         # Add batch dimension
         image_primary = image_primary[np.newaxis, ...]
         image_wrist = image_wrist[np.newaxis, ...]

@@ -119,9 +119,31 @@ class TrainConfig(DefaultTrainingConfig):
         if not fake_env:
             env = SpacemouseIntervention(env)
         env = RelativeFrame(env)
-        env = Quat2EulerWrapper(env)
-        env = SERLObsWrapper(env, proprio_keys=self.proprio_keys)
-        env = ChunkingWrapper(env, obs_horizon=stack_obs_num, act_exec_horizon=None)
+        env = Quat2EulerWrapper(env)  # Converts rotation from quaternion to Euler angles in observations.
+        env = SERLObsWrapper(env, proprio_keys=self.proprio_keys)  # Restructures observations to the SERL/Octo standard format.
+        """
+        convert:
+        {
+            "state": {
+                "tcp_pose": np.array([...]),      # 机器人姿态 (一个数组)
+                "tcp_vel": np.array([...]),       # 机器人速度 (一个数组)
+                "gripper_pose": np.array([...])   # 夹爪位置 (一个数组)
+                "tcp_force": np.array([...]),     # 机器人力 (一个数组)
+                "tcp_torque": np.array([...]),    # 机器人力矩 (一个数组)
+            },
+            "images": {
+                "wrist_1": np.array([...]),       # 手腕摄像头图像 (一个图像数组)
+                "side_policy_256": np.array([...]) # 侧面摄像头图像 (一个图像数组)
+            }
+        }
+        to:
+        {
+            "state": np.array([...]),             # 一个被压平的、包含所有状态信息的长向量
+            "wrist_1": np.array([...]),           # 手腕摄像头图像 (现在位于顶层)
+            "side_policy_256": np.array([...])     # 侧面摄像头图像 (现在位于顶层)
+        }
+        """
+        env = ChunkingWrapper(env, obs_horizon=stack_obs_num, act_exec_horizon=None)  # Stacks consecutive observations to provide a history to the policy.
         if classifier:
             classifier = load_classifier_func(
                 key=jax.random.PRNGKey(0),
@@ -133,11 +155,11 @@ class TrainConfig(DefaultTrainingConfig):
             def reward_func(obs):
                 def sigmoid(x): return 1 / (1 + jnp.exp(-x))
                 # Should open the gripper and pull up after putting the banana
-                if sigmoid(classifier(obs)[0]) > 0.9 and env.curr_gripper_pos > 0.5 and env.currpos[2] > 0.16:
+                if sigmoid(classifier(obs)[0]) > 0.9 and env.curr_gripper_pos > 0.5 and env.currpos[2] > 0.16:  # sigmoid/gripper state/z
                     return 10.0
                 else:
                     return self.reward_neg
 
-            env = MultiCameraBinaryRewardClassifierWrapper(env, reward_func)
-        env = GripperPenaltyWrapper(env, penalty=-0.2)
+            env = MultiCameraBinaryRewardClassifierWrapper(env, reward_func)  # Overrides reward calculation using a learned visual classifier.
+        env = GripperPenaltyWrapper(env, penalty=-0.2)  # Adds a penalty for inefficient or incorrect gripper actions.
         return env

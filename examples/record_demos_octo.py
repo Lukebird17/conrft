@@ -14,16 +14,16 @@ from octo.model.octo_model import OctoModel
 
 FLAGS = flags.FLAGS
 flags.DEFINE_string(
-    "exp_name", None, "Name of experiment corresponding to folder.")
-flags.DEFINE_integer("successes_needed", 20,
+    "exp_name", "twist", "Name of experiment corresponding to folder.")
+flags.DEFINE_integer("successes_needed", 30,
                      "Number of successful demos to collect.")
-flags.DEFINE_float("reward_scale", 1.0, "reward_scale ")
+flags.DEFINE_float("reward_scale", 1.0, "reward_scale ") 
 flags.DEFINE_float("reward_bias", 0.0, "reward_bias")
 
 
 def main(_):
     assert FLAGS.exp_name in CONFIG_MAPPING, 'Experiment folder not found.'
-    config = CONFIG_MAPPING[FLAGS.exp_name]()
+    config = CONFIG_MAPPING[FLAGS.exp_name]()   
     env = config.get_environment(
         fake_env=False, save_video=False, classifier=True, stack_obs_num=2)
 
@@ -46,7 +46,7 @@ def main(_):
     while success_count < success_needed:
         actions = np.zeros(env.action_space.sample().shape)
         next_obs, rew, done, truncated, info = env.step(actions)
-        returns += rew
+        returns += rew  # 计算累计奖励
         if "intervene_action" in info:
             actions = info["intervene_action"]
         transition = copy.deepcopy(

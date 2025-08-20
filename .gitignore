@@ -167,3 +167,11 @@ wandb
 .vscode
 .idea
 datasets/debug_dataset/bridge_dataset/1.0.0/action_*
+examples/classifier_ckpt
+examples/classifier_data
+examples/demo_data
+octo-small
+serl_robot_infra/franka_env/vr
+serl_robot_infra/franka_env/lerobot
+serl_robot_infra/robot_servers/flexiv_rdk
+serl_robot_infra/robot_servers/lib_py

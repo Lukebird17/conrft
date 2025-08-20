@@ -35,7 +35,7 @@ def main(_):
     # Create buffer for positive transitions
     pos_buffer = ReplayBuffer(env.observation_space, env.action_space, capacity=20000, include_label=True,)
 
-    success_paths = glob.glob(os.path.join(os.getcwd(), "classifier_data", "*success*.pkl"))
+    success_paths = glob.glob(os.path.join(os.getcwd(), f"classifier_data/classifier_data_{FLAGS.exp_name}", "*success*.pkl"))
     for path in success_paths:
         success_data = pkl.load(open(path, "rb"))
         for trans in success_data:
@@ -49,14 +49,14 @@ def main(_):
     
     # Create buffer for negative transitions
     neg_buffer = ReplayBuffer( env.observation_space, env.action_space, capacity=50000, include_label=True,)
-    failure_paths = glob.glob(os.path.join(os.getcwd(), "classifier_data", "*failure*.pkl"))
+    failure_paths = glob.glob(os.path.join(os.getcwd(), f"classifier_data/classifier_data_{FLAGS.exp_name}", "*failure*.pkl"))
     for path in failure_paths:
         failure_data = pkl.load( open(path, "rb"))
         for trans in failure_data:
             if "images" in trans['observations'].keys():
                 continue
             trans["labels"] = 0
-            trans['actions'] = env.action_space.sample()
+            trans['actions'] = env.action_space.sample()    # Classifier does not use actions.
             neg_buffer.insert(trans)
             
     neg_iterator = neg_buffer.get_iterator(sample_args={"batch_size": FLAGS.batch_size // 2,}, device=sharding.replicate(),)
@@ -117,8 +117,8 @@ def main(_):
 
         print(f"Epoch: {epoch+1}, Train Loss: {train_loss:.4f}, Train Accuracy: {train_accuracy:.4f}")
 
-    checkpoints.save_checkpoint(os.path.join(os.getcwd(), "classifier_ckpt/"), classifier, step=FLAGS.num_epochs, overwrite=True,)
-    
+    checkpoints.save_checkpoint(os.path.join(os.getcwd(), f"classifier_ckpt/classifier_ckpt_{FLAGS.exp_name}"), classifier, step=FLAGS.num_epochs, overwrite=True,)
+
 
 if __name__ == "__main__":
     app.run(main)

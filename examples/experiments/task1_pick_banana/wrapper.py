@@ -42,7 +42,7 @@ class PickBananaEnv(FrankaEnv):
         self.interpolate_move(target, timeout=1)
         time.sleep(0.5)
 
-        obs, info = super().reset(**kwargs)
+        obs, info = super().reset(**kwargs) # call the parent reset method
         self._send_gripper_command(1.0)
         time.sleep(1)
         self.success = False
@@ -72,7 +72,7 @@ class PickBananaEnv(FrankaEnv):
             time.sleep(0.5)
 
         # Perform Carteasian reset
-        if self.randomreset:  # randomize reset position in xy plane
+        if self.randomreset:  # randomize reset position in xy plane, false by default
             reset_pose = self.resetpos.copy()
             reset_pose[:2] += np.random.uniform(
                 -self.random_xy_range, self.random_xy_range, (2,)
