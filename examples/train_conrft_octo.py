@@ -43,6 +43,10 @@ flags.DEFINE_integer("seed", 42, "Random seed.")
 flags.DEFINE_boolean("learner", False, "Whether this is a learner.")
 flags.DEFINE_boolean("actor", False, "Whether this is an actor.")
 flags.DEFINE_string("ip", "localhost", "IP address of the learner.")
+
+flags.DEFINE_integer("port", 5555, "Trainer RPC port.")
+flags.DEFINE_string("host", "0.0.0.0", "Trainer server bind host.")
+
 flags.DEFINE_multi_string("demo_path", None, "Path to the demo data.")
 flags.DEFINE_string("checkpoint_path", None, "Path to save checkpoints.")
 flags.DEFINE_integer("eval_checkpoint_step", 0,
@@ -137,10 +141,17 @@ def actor(tasks, agent, data_store, intvn_data_store, env, sampling_rng):
         "actor_env_intvn": intvn_data_store,
     }
 
+    cfg = make_trainer_config()
+    try:
+        cfg.port = FLAGS.port
+    except Exception:
+        pass
+
     client = TrainerClient(
         "actor_env",
         FLAGS.ip,
-        make_trainer_config(),
+        # make_trainer_config(),
+        cfg,
         data_stores=datastore_dict,
         wait_for_server=True,
         timeout_ms=3000,
@@ -294,10 +305,17 @@ def learner(rng, tasks, agent, replay_buffer, demo_buffer, wandb_logger=None):
         if wandb_logger is not None:
             wandb_logger.log(payload, step=step)
         return {}  # not expecting a response
+    
+    # Create server
+    cfg = make_trainer_config()
+    try:
+        cfg.port = FLAGS.port
+        cfg.host = FLAGS.host  # 远程可达需 0.0.0.0
+    except Exception:
+        pass
 
     # Create server
-    server = TrainerServer(make_trainer_config(),
-                           request_callback=stats_callback)
+    server = TrainerServer(cfg, request_callback=stats_callback)
     server.register_data_store("actor_env", replay_buffer)
     server.register_data_store("actor_env_intvn", demo_buffer)
     server.start(threaded=True)
