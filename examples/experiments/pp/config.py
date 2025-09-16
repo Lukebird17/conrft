@@ -24,7 +24,7 @@ from serl_launcher.wrappers.chunking import ChunkingWrapper
 from serl_launcher.networks.reward_classifier import load_classifier_func
 import numpy as np
 from experiments.config import DefaultTrainingConfig
-from experiments.twist.wrapper import USBEnv, GripperPenaltyWrapper
+from experiments.pp.wrapper import PPEnv, GripperPenaltyWrapper
 
 from PIL import Image
 import requests
@@ -114,11 +114,11 @@ class EnvConfig(DefaultEnvConfig):
             "exposure": 16500,
         },
         "side_policy_256": { #web
-            "cam_id": 18,
+            "cam_id": 0,
             "dim": (1280, 720),
         },
         "side_classifier": {
-            "cam_id": 18,
+            "cam_id": 0,
             "dim": (1280, 720),
         },
     }
@@ -302,7 +302,7 @@ class TrainConfig(DefaultTrainingConfig):
     # transforms = RealWorldTransforms(option=cfg.task.transforms)
 
     def get_environment(self, fake_env=False, save_video=False, classifier=False, stack_obs_num=1):
-        env = USBEnv(
+        env = PPEnv(
             fake_env=fake_env, save_video=save_video, config=EnvConfig()
         )
         if not fake_env:
@@ -317,7 +317,7 @@ class TrainConfig(DefaultTrainingConfig):
                 key=jax.random.PRNGKey(0),  
                 sample=env.observation_space.sample(),
                 image_keys=self.classifier_keys,
-                checkpoint_path=os.path.abspath("classifier_ckpt/classifier_ckpt_twist"),
+                checkpoint_path=os.path.abspath("classifier_ckpt/classifier_ckpt_pp"),
             )
 
             def reward_func(obs):

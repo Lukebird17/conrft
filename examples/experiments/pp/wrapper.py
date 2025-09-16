@@ -10,7 +10,7 @@ import gymnasium as gym
 import time
 from franka_env.envs.franka_env import FrankaEnv
 
-class USBEnv(FrankaEnv):
+class PPEnv(FrankaEnv):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
     
@@ -35,72 +35,48 @@ class USBEnv(FrankaEnv):
                 self.cap[cam_name] = cap
 
 
+    # def reset(self, **kwargs):
+    #     self._recover()
+    #     self._update_currpos()
+    #     self._send_pos_command(self.currpos)
+    #     time.sleep(0.3)
+    #     requests.post(self.url + "update_param", json=self.config.PRECISION_PARAM)
+    #     # Move above the target pose
+    #     target = copy.deepcopy(self.currpos)
+    #     target[2] = self.config.TARGET_POSE[2] + 0.05
+    #     # target[2] = self.config.RESET_POSE[2]
+    #     self.interpolate_move(target, timeout=1)
+    #     time.sleep(0.5)
 
-    def reset_old(self, **kwargs):
-        self._recover()
-        self._update_currpos()
-        self._send_pos_command(self.currpos)
-        time.sleep(0.1)
-        requests.post(self.url + "update_param", json=self.config.PRECISION_PARAM)
-        self._send_gripper_command(0.1)
-        
-        # Move above the target pose
-        target = copy.deepcopy(self.currpos)
-        target[2] = self.config.TARGET_POSE[2] + 0.1
-        self.interpolate_move(target, timeout=0.5)
-        time.sleep(0.5)
-        self.interpolate_move(self.config.TARGET_POSE, timeout=0.5)
-        time.sleep(0.5)
-        self._send_gripper_command(0.1)
-
-        self._update_currpos()
-        reset_pose = copy.deepcopy(self.config.TARGET_POSE)
-        reset_pose[1] += 0.02
-        self.interpolate_move(reset_pose, timeout=0.5)
-
-        obs, info = super().reset(**kwargs)
-        self._send_gripper_command(0.1)
-        time.sleep(1)
-        self.success = False
-        self._update_currpos()
-        obs = self._get_obs()
-
-        return obs, info
+    #     obs, info = super().reset(**kwargs)
+    #     self._send_gripper_command(1.0)
+    #     time.sleep(1)
+    #     self.success = False
+    #     self._update_currpos()
+    #     obs = self._get_obs()
+    #     return obs, info
 
     def reset(self, **kwargs):
         self._recover()
         self._update_currpos()
-        # self._send_pos_command(self.currpos)
         time.sleep(0.1)
         requests.post(self.url + "update_param", json=self.config.PRECISION_PARAM)
 
 
         # currpose = self.currpos
-        # reset_pose = currpose
-        # reset_pose[0] += 0.05
-        # self.interpolate_move(reset_pose, timeout=0.5)
-        # time.sleep(0.5)
-        # print("reset low point")
-        # # reset_pos = np.array([0.856775164604187,-0.04361021891236305,0.08989010006189346,-4.311542397772428e-06,5.085386760583788e-07,1.0,-4.779576102009742e-06])
-        # reset_pos = np.array([0.7395889163017273,-0.04663907364010811,0.0313747692108154,-4.311542397772428e-06,5.085386760583788e-07,1.0,-4.779576102009742e-06])
-        # reset_pos = np.array([0.7479987740516663,-0.03063167631626129,0.16586297750473022,-0.00018006890604738146,2.0702129859273555e-06,1.0,2.430021959298756e-05])
+
         reset_pos = self._RESET_POSE
-        # print("end reseting")
-        # reset_pos[2] + 0.05
-        # self.interpolate_move(reset_pos, timeout=0.5)
-        # time.sleep(0.5)
 
         obs, info = super().reset(**kwargs)
+
+        print("################## This is the reset function ########################")
 
         self.success = False
         self._send_gripper_command(0.05)
         self.interpolate_move(reset_pos, timeout=0.5)
         time.sleep(1)
-        print("##################this is the reset function########################")
         self._send_gripper_command(0.1)
-        time.sleep(1)
-        self._send_gripper_command(0.05)
-        time.sleep(1)
+        time.sleep(3)
         self._update_currpos()
         obs = self._get_obs()
 

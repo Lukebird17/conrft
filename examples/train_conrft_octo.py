@@ -6,6 +6,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 import tqdm
+import logging
+import datetime
 from absl import app, flags
 from flax.training import checkpoints
 from flax.core import frozen_dict
@@ -161,6 +163,10 @@ def actor(tasks, agent, data_store, intvn_data_store, env, sampling_rng):
     def update_params(params):
         nonlocal agent
         agent = agent.replace(state=agent.state.replace(params=params))
+        # print_green("Agent parameters updated.")
+        msg = f"Agent parameters updated at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        print_green(msg)
+        logging.info(msg)
 
     client.recv_network_callback(update_params)
 
@@ -276,6 +282,10 @@ def actor(tasks, agent, data_store, intvn_data_store, env, sampling_rng):
                 pkl.dump(demo_transitions, f)
                 demo_transitions = []
 
+        if (step > 0 and config.checkpoint_period and step % config.checkpoint_period == 0):
+            checkpoints.save_checkpoint(
+                FLAGS.checkpoint_path, agent.state, step=step, keep=100)
+
         timer.tock("total")
 
         if step % config.log_period == 0:
@@ -309,7 +319,8 @@ def learner(rng, tasks, agent, replay_buffer, demo_buffer, wandb_logger=None):
     # Create server
     cfg = make_trainer_config()
     try:
-        cfg.port = FLAGS.port
+        cfg.port_number = FLAGS.port
+        print("cfg******",cfg.port_number)
         cfg.host = FLAGS.host  # 远程可达需 0.0.0.0
     except Exception:
         pass
@@ -455,6 +466,7 @@ def learner(rng, tasks, agent, replay_buffer, demo_buffer, wandb_logger=None):
         if step > 0 and step % (config.steps_per_update) == 0:
             agent = jax.block_until_ready(agent)
             server.publish_network(agent.state.params)
+            print_green(f"published network at step {step}")
 
         if step % config.log_period == 0 and wandb_logger:
             wandb_logger.log(update_info, step=step)
@@ -469,6 +481,13 @@ def learner(rng, tasks, agent, replay_buffer, demo_buffer, wandb_logger=None):
 
 
 def main(_):
+
+    logging.basicConfig(
+        filename='actor_param_update.log',  # 日志文件名，可自定义
+        level=logging.INFO,
+        format='%(asctime)s %(levelname)s: %(message)s'
+    )
+
     global config
     config = CONFIG_MAPPING[FLAGS.exp_name]()
 

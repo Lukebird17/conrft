@@ -46,7 +46,7 @@ def create_classifier(
     key: jnp.ndarray,
     sample: Dict,
     image_keys: List[str],
-    pretrained_encoder_path: str = "/home/ziyu/Project/VLA-RL/conrft/examples/experiments/resnet10_params.pkl",
+    pretrained_encoder_path: str = "/home/ziyu/Project/VLA_RL/conrft/examples/experiments/resnet10_params.pkl",
     n_way: int = 2,
 ):
     pretrained_encoder = resnetv1_configs["resnetv1-10-frozen"](
